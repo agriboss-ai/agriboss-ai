@@ -27,8 +27,20 @@ const PAYMENT = {
 ───────────────────────────────────────────── */
 const RAPPORT_TIERS = [
   {
+    id: "hebdo",
+    nom: "Rapport Hebdomadaire",
+    prix: 0,
+    label: "GRATUIT",
+    color: C.fresh,
+    bg: C.pale,
+    emoji: "📅",
+    description: "Résumé de la semaine — dépenses et observations",
+    features: ["Résumé 7 jours", "Totaux par catégorie", "Téléchargement PDF"],
+    livraison: ["download"],
+  },
+  {
     id: "simple",
-    nom: "Rapport Simple",
+    nom: "Rapport Mensuel Simple",
     prix: 0,
     label: "GRATUIT",
     color: C.leaf,
@@ -253,9 +265,10 @@ Données du mois (${getMois()}) :
 - Nombre de transactions : ${expenses.length}
 - Détail transactions : ${expenses.map(e => `${e.description} (${e.categorie}): ${e.montant.toLocaleString("fr-FR")} FCFA`).join("; ")}
 
-${tier.id === "simple" ? "Génère un résumé simple avec totaux par catégorie et 2-3 observations." : ""}
-${tier.id === "complet" ? "Génère une analyse complète avec : résumé exécutif, analyse par catégorie, ratio intrants/main-d'oeuvre, 3 conseils financiers concrets pour optimiser les coûts, comparaison avec budget type par culture." : ""}
-${tier.id === "pro" ? "Génère un bilan comptable professionnel complet avec : résumé exécutif, analyse détaillée par poste, calcul du seuil de rentabilité estimé, ROI projeté, 5 recommandations stratégiques, plan d'action pour le mois suivant, et indicateurs clés de performance agricole." : ""}
+${tier.id === "hebdo" ? "Génère un résumé HEBDOMADAIRE simple et clair avec : totaux de la semaine par catégorie, 2 observations clés, et 1 conseil pour la semaine prochaine." : ""}
+${tier.id === "simple" ? "Génère un résumé mensuel simple avec totaux par catégorie et 2-3 observations." : ""}
+${tier.id === "complet" ? "Génère une analyse mensuelle complète avec : résumé exécutif, analyse par catégorie, ratio intrants/main-d'oeuvre, 3 conseils financiers concrets pour optimiser les coûts, comparaison avec budget type par culture." : ""}
+${tier.id === "pro" ? "Génère un bilan mensuel comptable professionnel complet avec : résumé exécutif, analyse détaillée par poste, calcul du seuil de rentabilité estimé, ROI projeté, 5 recommandations stratégiques, plan d'action pour le mois suivant, et indicateurs clés de performance agricole." : ""}
 
 Réponds en français, de façon structurée avec des sections claires. Utilise des emojis pour rendre le rapport lisible.`;
 
@@ -448,14 +461,23 @@ function Dashboard({ expenses, onRapport }) {
         })}
       </div>
 
-      <button onClick={onRapport} style={{
-        width: "100%", background: `linear-gradient(135deg,${C.earth},${C.earthMid})`,
-        color: C.white, border: "none", borderRadius: 14, padding: "15px",
-        fontWeight: 700, fontSize: 15, cursor: "pointer", marginBottom: 14,
-        boxShadow: "0 4px 14px rgba(139,69,19,0.3)",
-      }}>
-        📋 Générer mon rapport mensuel
-      </button>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <button onClick={() => onRapport("hebdo")} style={{
+          flex: 1, background: `linear-gradient(135deg,${C.leaf},${C.midGreen})`,
+          color: C.white, border: "none", borderRadius: 14, padding: "13px 8px",
+          fontWeight: 700, fontSize: 12, cursor: "pointer",
+        }}>
+          📅 Rapport<br/>Semaine
+        </button>
+        <button onClick={() => onRapport("mensuel")} style={{
+          flex: 2, background: `linear-gradient(135deg,${C.earth},${C.earthMid})`,
+          color: C.white, border: "none", borderRadius: 14, padding: "13px",
+          fontWeight: 700, fontSize: 13, cursor: "pointer",
+          boxShadow: "0 4px 14px rgba(139,69,19,0.3)",
+        }}>
+          📋 Rapport Mensuel
+        </button>
+      </div>
 
       <div style={{ fontSize: 13, fontWeight: 600, color: C.mid, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
         {expenses.length} transaction{expenses.length > 1 ? "s" : ""}
@@ -582,6 +604,7 @@ export default function AgribossAI() {
   const [expenses, setExpenses] = useState([]);
   const [view, setView] = useState("chat");
   const [showRapport, setShowRapport] = useState(false);
+  const [rapportType, setRapportType] = useState("mensuel");
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
@@ -672,7 +695,7 @@ export default function AgribossAI() {
           <>
             {activeModule === "finance" && view === "dashboard" ? (
               <div style={{ flex: 1, overflow: "auto", paddingTop: 16 }}>
-                <Dashboard expenses={expenses} onRapport={() => setShowRapport(true)} />
+                <Dashboard expenses={expenses} onRapport={(type) => { setRapportType(type || "mensuel"); setShowRapport(true); }} />
               </div>
             ) : (
               <>
@@ -698,9 +721,12 @@ export default function AgribossAI() {
                 </div>
 
                 {activeModule === "finance" && expenses.length > 0 && (
-                  <div style={{ padding: "8px 14px 0" }}>
-                    <button onClick={() => setShowRapport(true)} style={{ width: "100%", background: `linear-gradient(135deg,${C.earth},${C.earthMid})`, color: C.white, border: "none", borderRadius: 12, padding: "11px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                      📋 Générer rapport mensuel ({expenses.length} dépenses · {expenses.reduce((s, e) => s + e.montant, 0).toLocaleString("fr-FR")} FCFA)
+                  <div style={{ padding: "8px 14px 0", display: "flex", gap: 8 }}>
+                    <button onClick={() => { setShowRapport(true); setRapportType("hebdo"); }} style={{ flex: 1, background: `linear-gradient(135deg,${C.leaf},${C.midGreen})`, color: C.white, border: "none", borderRadius: 12, padding: "11px 6px", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>
+                      📅 Semaine
+                    </button>
+                    <button onClick={() => { setShowRapport(true); setRapportType("mensuel"); }} style={{ flex: 2, background: `linear-gradient(135deg,${C.earth},${C.earthMid})`, color: C.white, border: "none", borderRadius: 12, padding: "11px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                      📋 Rapport Mensuel
                     </button>
                   </div>
                 )}
